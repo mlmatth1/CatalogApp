@@ -1,0 +1,83 @@
+{% extends "main.html" %}
+{% block content %}
+{% include "header.html" %}
+
+<div class="row divider green">
+	<div class="col-md-12"></div>
+</div>
+<div class="row banner menu">
+	<div class="col-md-11 col-md-offset-1 padding-none">
+		<h1>Catalog App</h1>
+	</div>
+</div>
+	<div class="row top-menu">
+		<table class="table">
+		  <thead>
+		    <tr>
+		      <th scope="col">Catagories</th>
+		      <th scope="col">{{catagory.name}} Items ({{count}} items)</th>
+		    </tr>
+			</thead>
+				<tr>
+					<td>
+
+						{{catagory.name}}<br>
+
+					</td>
+					<td>
+						{% for i in items %}
+								<a href = "{{url_for('showItemDescription', catagory_id = catagory.id, catagory_item_id = i.id)}}">
+									<h6>{{i.name}}</h6>
+								</a>
+
+						{% endfor %}
+
+					</td>
+			</tr>
+
+			</div>
+	</div>
+
+<div class = 'flash'>
+		      {% with messages = get_flashed_messages() %}
+      {% if messages %}
+
+        <ul>
+        {% for message in messages %}
+            <li> <strong> {{ message }} </strong> </li>
+        {% endfor %}
+        </ul>
+        {% endif %}
+    {% endwith %}
+
+</div>
+
+	<div class="row padding-top padding-bottom">
+		<div class="col-md-1"></div>
+		<div class="col-md-10 padding-none">
+
+				<div class="btn-group">
+					<a href="{{url_for('newCatagoryItem', catagory_id=catagory.id)}}">
+						<button class="btn btn-default" id="new-catagory-item">
+							<span aria-hidden="true"></span>Add Catagory Items
+						</button>
+					</a>
+					<a href="{{url_for('editCatagory', catagory_id=catagory.id)}}">
+						<button class="btn btn-default" id="edit-catagory">
+							<span aria-hidden="true"></span>Edit Catagory
+						</button>
+				</a>
+				<a href="{{url_for('deleteCatagory', catagory_id=catagory.id)}}">
+					<button class="btn btn-default" id="delete-catagory">
+						<span aria-hidden="true"></span>Delete Catagory
+					</button>
+			</a>
+				</div>
+
+		</div>
+		<div class="col-md-1"></div>
+	</div>
+</div>
+
+
+{% endblock %}

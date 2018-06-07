@@ -1,0 +1,12 @@
+<nav class="navbar navbar-light bg-primary">
+	<a  href="{{url_for('showCatagories')}}">Home
+	</a>
+	<div class="col-md-12 text-right">
+			{%if 'username' not in session %}
+			<a href="{{url_for('showLogin')}}">Login</a>
+			{% else %}
+			<a href="{{url_for('disconnect')}}">Logout</a>
+			{% endif %}
+
+	</div>
+</nav>
