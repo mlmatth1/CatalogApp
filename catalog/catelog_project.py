@@ -415,7 +415,7 @@ def showCatagory(catagory_id):
         count = session.query(CatagoryItem).\
             filter_by(category_id=catagory_id).count()
 
-            return render_template(
+        return render_template(
                 'catagoryItems.html',
                 items=items,
                 catagory=catagory,
