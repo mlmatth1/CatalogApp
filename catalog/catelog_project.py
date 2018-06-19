@@ -337,7 +337,7 @@ def newCatagory():
 
 @app.route('/catagory/<int:catagory_id>/edit/', methods=['GET', 'POST'])
 def editCatagory(catagory_id):
-    editedCatagory = session.query(Catagories).filter_by(id=catagory_id)..one_or_none()
+    editedCatagory = session.query(Catagories).filter_by(id=catagory_id).one_or_none()
     creator = getUserInfo(catagory.user_id)
     if 'username' not in login_session or creator.id != login_session['user_id']:
         return redirect('/login')
@@ -347,10 +347,9 @@ def editCatagory(catagory_id):
         session.add(editedItem)
         session.commit()
         flash('Catagory Successfully Edited %s' % editedCatagory.name)
-        else:
-            return redirect(url_for('showCatagories'))
+        return redirect(url_for('showCatagories'))
     else:
-            return render_template('editCatagory.html', category=editedCatagory)
+        return render_template('editCatagory.html', category=editedCatagory)
 
 
 """ Delete a catagory """
