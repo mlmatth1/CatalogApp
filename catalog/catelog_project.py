@@ -27,7 +27,7 @@ DBSession = sessionmaker(bind=engine)
 session = DBSession()
 
 """ Create anti-forgery state token """
-
+#if 'username' not in login_session or creator.id != login_session['user_id']:
 
 @app.route('/login')
 def showLogin():
@@ -83,7 +83,6 @@ def gconnect():
     if result['issued_to'] != CLIENT_ID:
         response = make_response(
             json.dumps("Token's client ID does not match app's."), 401)
-        print "Token's client ID does not match app's."
         response.headers['Content-Type'] = 'application/json'
         return response
 
@@ -114,7 +113,6 @@ def gconnect():
     user_id = getUserID(login_session['email'])
     if not user_id:
         user_id = createUser(login_session)
-        print user_id
     login_session['user_id'] = user_id
 
     creator = getUserInfo(user_id)
@@ -140,20 +138,17 @@ def gconnect():
 def gdisconnect():
     access_token = login_session.get('access_token')
     if access_token is None:
-        print 'Access Token is None'
         response = make_response(json.dumps('Current \
             user not connected.'), 401)
         response.headers['Content-Type'] = 'application/json'
         return response
-    print 'In gdisconnect access token is %s', access_token
-    print 'User name is: '
-    print login_session['username']
+    #print 'In gdisconnect access token is %s', access_token
+    #print 'User name is: '
+    #print login_session['username']
     url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' \
         % login_session['access_token']
     h = httplib2.Http()
     result = h.request(url, 'GET')[0]
-    print 'result is '
-    print result
     if result['status'] == '200':
         del login_session['access_token']
         del login_session['gplus_id']
@@ -179,7 +174,7 @@ def fbconnect():
         response.headers['Content-Type'] = 'application/json'
         return response
     access_token = request.data
-    print "access token received %s " % access_token
+    #print "access token received %s " % access_token
 
     app_id = json.loads(open('fb_client_secrets.json', 'r').read())[
         'web']['app_id']
@@ -308,7 +303,7 @@ def showCatagories():
         order_by(CatagoryItem.id.desc())
 
     if 'username' not in login_session:
-        return redirect('/login')
+        return render_template('publicCatagories.html', catagories=catagories)
     else:
         return render_template(
             'catagories.html',
@@ -342,20 +337,19 @@ def newCatagory():
 
 @app.route('/catagory/<int:catagory_id>/edit/', methods=['GET', 'POST'])
 def editCatagory(catagory_id):
-    editedCatagory = session.query(Catagories).filter_by(id=catagory_id).one()
-    print editedCatagory.name
+    editedCatagory = session.query(Catagories).filter_by(id=catagory_id)..one_or_none()
+    creator = getUserInfo(catagory.user_id)
+    if 'username' not in login_session or creator.id != login_session['user_id']:
+        return redirect('/login')
     if request.method == 'POST':
         if request.form['name']:
             editedCatagory.name = request.form['name']
-            flash('Catagory Successfully Edited %s' % editedCatagory.name)
-        if 'username' not in login_session:
-            return redirect('/login')
+        session.add(editedItem)
+        session.commit()
+        flash('Catagory Successfully Edited %s' % editedCatagory.name)
         else:
             return redirect(url_for('showCatagories'))
     else:
-        if 'username' not in login_session:
-            return redirect('/login')
-        else:
             return render_template('editCatagory.html', category=editedCatagory)
 
 
@@ -365,39 +359,43 @@ def editCatagory(catagory_id):
 @app.route('/catagory/<int:catagory_id>/delete/', methods=['GET', 'POST'])
 def deleteCatagory(catagory_id):
     catagoryToDelete = session.query(
-        Catagories).filter_by(id=catagory_id).one()
-    if catagoryToDelete.user_id != login_session['user_id']:
-        return "<script>function myFunction() {\
-            alert('You are not authorized to delete this catagory. \
-            Please create your own catagory in order to delete.');}\
-            </script><body onload='myFunction()''>"
-    if request.method == 'POST':
-        if 'username' not in login_session:
-            return redirect('/login')
-
-        itemCount = session.query(
-            CatagoryItem).filter_by(id=catagory_id).count()
-        Catagory = session.query(CatagoryItem).\
-            filter_by(category_id=catagory_id).first()
-        if Catagory is None:
-            session.delete(catagoryToDelete)
-            flash('%s Successfully Deleted' % catagoryToDelete.name)
-            session.commit()
-            return redirect(url_for('showCatagories', catagory_id=catagory_id))
-        else:
-            return "<script>function myFunction(){\
-            alert('You must first remove all Category Items first. \
-            Please remove all items.');}\
+        Catagories).filter_by(id=catagory_id).one_or_none()
+    creator = getUserInfo(catagory.user_id)
+    if 'username' not in login_session:
+        return redirect('/login')
+    elif creator.id != login_session['user_id']:
+            return "<script>function myFunction() {\
+                alert('You are not authorized to delete this catagory. \
+                Please create your own catagory in order to delete.');}\
                 </script><body onload='myFunction()''>"
-
     else:
-        if 'username' not in login_session:
-            return redirect('/login')
-        else:
-            return render_template(
-                'deletecatagory.html', category=catagoryToDelete)
+        if request.method == 'POST':
+            if 'username' not in login_session:
+                return redirect('/login')
 
-    return redirect(url_for('showCatagories', catagory_id=catagory_id))
+            itemCount = session.query(
+                CatagoryItem).filter_by(id=catagory_id).count()
+            Catagory = session.query(CatagoryItem).\
+                filter_by(category_id=catagory_id).first()
+            if Catagory is None:
+                session.delete(catagoryToDelete)
+                flash('%s Successfully Deleted' % catagoryToDelete.name)
+                session.commit()
+                return redirect(url_for('showCatagories', catagory_id=catagory_id))
+            else:
+                return "<script>function myFunction(){\
+                alert('You must first remove all Category Items first. \
+                Please remove all items.');}\
+                    </script><body onload='myFunction()''>"
+
+        else:
+            if 'username' not in login_session:
+                return redirect('/login')
+            else:
+                return render_template(
+                    'deletecatagory.html', category=catagoryToDelete)
+
+        return redirect(url_for('showCatagories', catagory_id=catagory_id))
 """List out Category Items """
 
 
@@ -487,7 +485,6 @@ def showItemDescription(catagory_id, catagory_item_id):
         session.query(CatagoryItem).filter_by(id=catagory_item_id).one()
     catagory = session.query(Catagories).filter_by(id=catagory_id).one()
     creator = getUserInfo(catagory.user_id)
-    print catagory_item_id
     if 'username' not in login_session or \
         creator.id != login_session['user_id']:
         return redirect('/login')
