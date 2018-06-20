@@ -338,13 +338,13 @@ def newCatagory():
 @app.route('/catagory/<int:catagory_id>/edit/', methods=['GET', 'POST'])
 def editCatagory(catagory_id):
     editedCatagory = session.query(Catagories).filter_by(id=catagory_id).one_or_none()
-    creator = getUserInfo(catagory.user_id)
+    creator = getUserInfo(editedCatagory.user_id)
     if 'username' not in login_session or creator.id != login_session['user_id']:
         return redirect('/login')
     if request.method == 'POST':
         if request.form['name']:
             editedCatagory.name = request.form['name']
-        session.add(editedItem)
+        session.add(editedCatagory)
         session.commit()
         flash('Catagory Successfully Edited %s' % editedCatagory.name)
         return redirect(url_for('showCatagories'))
@@ -359,8 +359,8 @@ def editCatagory(catagory_id):
 def deleteCatagory(catagory_id):
     catagoryToDelete = session.query(
         Catagories).filter_by(id=catagory_id).one_or_none()
-    creator = getUserInfo(catagory.user_id)
-    if 'username' not in login_session:
+    creator = getUserInfo(catagoryToDelete.user_id)
+    if 'username' not in login_session or creator.id != login_session['user_id']:
         return redirect('/login')
     elif creator.id != login_session['user_id']:
             return "<script>function myFunction() {\
@@ -449,27 +449,28 @@ def newCatagoryItem(catagory_id):
     '/catagory/<int:catagory_id>/catagory_item/<int:catagory_item_id>/edit',
     methods=['GET', 'POST'])
 def editCatagoryItem(catagory_id, catagory_item_id):
-    if 'username' not in login_session:
-        return redirect('/login')
-    else:
+
         editedItem = session.query(
             CatagoryItem).filter_by(id=catagory_item_id).one()
         catagory = session.query(Catagories).filter_by(id=catagory_id).one()
-
-        if request.method == 'POST':
-            if request.form['name']:
-                editedItem.name = request.form['name']
-            if request.form['description']:
-                editedItem.description = request.form['description']
-            session.add(editedItem)
-            session.commit()
-            flash('Menu Item Successfully Edited')
-            return redirect(url_for('showCatagoryItem', catagory_id=catagory_id))
+        creator = getUserInfo(catagory.user_id)
+        if 'username' not in login_session or creator.id != login_session['user_id']:
+            return redirect('/login')
         else:
-            return render_template(
-                'editCatagory.html',
-                catagory_id=catagory_id,
-                catagory_item_id=catagory_item_id, item=editedItem)
+            if request.method == 'POST':
+                if request.form['name']:
+                    editedItem.name = request.form['name']
+                if request.form['description']:
+                    editedItem.description = request.form['description']
+                session.add(editedItem)
+                session.commit()
+                flash('Menu Item Successfully Edited')
+                return redirect(url_for('showCatagoryItem', catagory_id=catagory_id))
+            else:
+                return render_template(
+                    'editCatagory.html',
+                    catagory_id=catagory_id,
+                    catagory_item_id=catagory_item_id, item=editedItem)
 
 """List out Category Items"""
 
@@ -502,34 +503,35 @@ def showItemDescription(catagory_id, catagory_item_id):
     <int:catagory_item_id>/description/edit',
     methods=['GET', 'POST'])
 def editItemDescription(catagory_id, catagory_item_id):
-    if 'username' not in login_session:
-        return redirect('/login')
-    else:
         editedItem = session.query(
             CatagoryItem).filter_by(id=catagory_item_id).one()
         catagory = session.query(Catagories).filter_by(id=catagory_id).one()
         catagories = session.query(Catagories).all()
-        if request.method == 'POST':
-            if request.form['name']:
-                editedItem.name = request.form['name']
-            if request.form['description']:
-                editedItem.description = request.form['description']
-            category = request.form['catagories']
-            categoryId = session.query(Catagories).filter_by(name=category).one()
-            editedItem.category_id = categoryId.id
-            session.add(editedItem)
-            session.commit()
-            flash('Catagory Item Successfully Edited')
-            return redirect(
-                url_for('showItemDescription',
-                        catagory_id=catagory_id,
-                        catagory_item_id=catagory_item_id))
+        creator = getUserInfo(catagory.user_id)
+        if 'username' not in login_session or creator.id != login_session['user_id']:
+            return redirect('/login')
         else:
-            return render_template(
-                'editItemDescription.html',
-                catagories=catagories,
-                catagory_id=catagory_id,
-                catagory_item_id=catagory_item_id, items=editedItem)
+            if request.method == 'POST':
+                if request.form['name']:
+                    editedItem.name = request.form['name']
+                if request.form['description']:
+                    editedItem.description = request.form['description']
+                category = request.form['catagories']
+                categoryId = session.query(Catagories).filter_by(name=category).one()
+                editedItem.category_id = categoryId.id
+                session.add(editedItem)
+                session.commit()
+                flash('Catagory Item Successfully Edited')
+                return redirect(
+                    url_for('showItemDescription',
+                            catagory_id=catagory_id,
+                            catagory_item_id=catagory_item_id))
+            else:
+                return render_template(
+                    'editItemDescription.html',
+                    catagories=catagories,
+                    catagory_id=catagory_id,
+                    catagory_item_id=catagory_item_id, items=editedItem)
 
 
 """ Delete a menu item """
@@ -539,20 +541,21 @@ def editItemDescription(catagory_id, catagory_item_id):
     '/catagory/<int:catagory_id>/catagory_item/<int:catagory_item_id>/delete',
     methods=['GET', 'POST'])
 def deleteCatagoryItem(catagory_id, catagory_item_id):
-    if 'username' not in login_session:
-        return redirect('/login')
-    else:
+
         catagory = session.query(Catagories).filter_by(id=catagory_id).one()
         itemToDelete = session.query(
             CatagoryItem).filter_by(id=catagory_item_id).one()
-
-        if request.method == 'POST':
-            session.delete(itemToDelete)
-            session.commit()
-            flash('Catagory Item Successfully Deleted')
-            return redirect(url_for('showCatagory', catagory_id=catagory_id))
+        creator = getUserInfo(catagory.user_id)
+        if 'username' not in login_session or creator.id != login_session['user_id']:
+            return redirect('/login')
         else:
-            return render_template('deleteCatagoryItem.html', item=itemToDelete)
+            if request.method == 'POST':
+                session.delete(itemToDelete)
+                session.commit()
+                flash('Catagory Item Successfully Deleted')
+                return redirect(url_for('showCatagory', catagory_id=catagory_id))
+            else:
+                return render_template('deleteCatagoryItem.html', item=itemToDelete)
 
 
 def getUserID(email):
